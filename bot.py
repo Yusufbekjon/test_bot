@@ -3,16 +3,43 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
     CallbackQueryHandler, ContextTypes, ConversationHandler, filters
 )
+import random
+import json
 
 # Bosqichlar uchun o'zgaruvchilar
 ASK_NAME, ASK_AGE, ASK_PHONE, ASK_SUBJECT, ASK_PAYMENT = range(5)
 
+# Test natijalarini saqlash uchun fayl nomi
+TEST_RESULTS_FILE = "test_results.json"
+
+# Test natijalarini yuklash
+def load_test_results():
+    try:
+        with open(TEST_RESULTS_FILE, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+# Test natijalarini saqlash
+def save_test_results(data):
+    with open(TEST_RESULTS_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+# Foydalanuvchiga unikal raqamli ID berish
+def generate_user_id():
+    return str(random.randint(100000, 999999))  # 6 raqamli tasodifiy ID yaratadi
+
+# Foydalanuvchi ma'lumotlarini boshqarish
+test_results = load_test_results()
+
 # /start buyrug'i
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    if 'name' in context.user_data:  # Ro'yxatdan o'tganligini tekshirish
-        user_data = context.user_data
+    user_data = context.user_data
+
+    if 'id' in user_data:  # Ro'yxatdan o'tganligini tekshirish
         await update.message.reply_text(
             f"Siz ro'yxatdan o'tgansiz.\n\n"
+            f"ID: {user_data['id']}\n"
             f"Ism: {user_data['name']}\n"
             f"Yosh: {user_data['age']}\n"
             f"Telefon: {user_data['phone']}\n"
@@ -21,6 +48,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return ConversationHandler.END
     else:
+        # Agar ID yo'q bo'lsa, yangi ID yarating
+        user_data['id'] = generate_user_id()  # ID faqat birinchi ro'yxatdan o'tishda yaratiladi
         await update.message.reply_text("Ism Familyanigizni kiriting:")
         return ASK_NAME
 
@@ -28,16 +57,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def ask_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     name = update.message.text
     if not name.replace(" ", "").isalpha():
-        await update.message.reply_text("✍️Iltimos, faqat harflardan foydalaning. Raqamlardan foydalanmang.")
+        await update.message.reply_text("Iltimos, faqat harflardan foydalaning. Raqamlardan foydalanmang.")
         return ASK_NAME
     context.user_data['name'] = name
-    await update.message.reply_text("✍️Yoshingizni kiriting:")
+    await update.message.reply_text("Yoshingizni kiriting:")
     return ASK_AGE
 
 # Yoshni qabul qilish
 async def ask_age(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data['age'] = update.message.text
-    await update.message.reply_text("📞Telefon raqamingizni yuboring:")
+    await update.message.reply_text("Telefon raqamingizni yuboring:")
     return ASK_PHONE
 
 # Telefon raqamini qabul qilish
@@ -68,7 +97,7 @@ async def ask_subject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
     # To'lov usuli tugmalari
     payment_keyboard = [
-        [InlineKeyboardButton("💵 Offline", callback_data="offline"), InlineKeyboardButton("💳 Online", callback_data="online")]
+        [InlineKeyboardButton("\ud83d\udcb5 Offline", callback_data="offline"), InlineKeyboardButton("\ud83d\udcb3 Online", callback_data="online")]
     ]
     reply_markup = InlineKeyboardMarkup(payment_keyboard)
 
@@ -82,54 +111,43 @@ async def ask_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     payment_method = query.data
     context.user_data['payment_method'] = payment_method
 
+    user_id = context.user_data['id']
+    test_results[user_id] = {
+        "name": context.user_data['name'],
+        "age": context.user_data['age'],
+        "phone": context.user_data['phone'],
+        "subject": context.user_data['subject'],
+        "payment_method": context.user_data['payment_method'],
+        "correct": 0,
+        "wrong": 0
+    }
+    save_test_results(test_results)
+
     if payment_method == "offline":
         await query.edit_message_text(
-            f"Hurmatli {context.user_data['name']},\nMa'lumotlaringiz saqlandi. To'lovni offline amalga oshirishingiz mumkin."
+            f"Hurmatli {context.user_data['name']},\nMa'lumotlaringiz saqlandi. To'lovni offline amalga oshirishingiz mumkin.\n"
+            f"Sizning ID: {user_id}"
         )
     else:
         await query.edit_message_text(
             f"Hurmatli {context.user_data['name']},\nTo'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n"
-            f"Karta: 9860 1201 1404 7869\nEga: @Ozodbekmath_teacher\n\nTo'lovni amalga oshirgach, adminga murojaat qiling!"
+            f"Karta: 9860 1201 1404 7869\nEga: @Ozodbekmath_teacher\n\n"
+            f"Sizning ID: {user_id}\n"
+            f"To'lovni amalga oshirgach, adminga murojaat qiling!"
         )
-        await admin_notify(update, context)
 
     return ConversationHandler.END
 
-# Adminga foydalanuvchi haqida ma'lumot yuborish
-async def admin_notify(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    admin_chat_id = "5424737524"  # Admin chat ID
-
-    user_data = context.user_data
-    user_info = (
-        f"Foydalanuvchi ma'lumoti:\n"
-        f"Ismi: {user_data['name']}\n"
-        f"Yoshi: {user_data['age']}\n"
-        f"Telefon: {user_data['phone']}\n"
-        f"Fan yo'nalishi: {user_data['subject']}\n"
-        f"To'lov usuli: {user_data['payment_method']}"
-    )
-
-    decision_keyboard = [
-        [InlineKeyboardButton("Tasdiqlash", callback_data="approve"), InlineKeyboardButton("Rad etish", callback_data="reject")]
-    ]
-    reply_markup = InlineKeyboardMarkup(decision_keyboard)
-
-    await context.bot.send_message(chat_id=admin_chat_id, text=user_info, reply_markup=reply_markup)
-
-# Adminning tasdiqlash yoki rad etish jarayoni
-async def admin_decision(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    query = update.callback_query
-    await query.answer()
-
-    if query.data == "approve":
-        await query.edit_message_text("Siz ro'yhatdan muvaffaqiyatli o'tingiz")
-    elif query.data == "reject":
-        await query.edit_message_text("Foydalanuvchi rad etildi. To'lov amalga oshirilmagan.")
-
-# Ro'yxatdan o'tishni bekor qilish
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text("Ro'yxatdan o'tish bekor qilindi.")
-    return ConversationHandler.END
+# Test natijasini ko'rsatish
+async def show_test_result(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.message.text.strip()
+    if user_id in test_results:
+        result = test_results[user_id]
+        await update.message.reply_text(
+            f"Test natijasi:\nTo'g'ri: {result['correct']}\nXato: {result['wrong']}"
+        )
+    else:
+        await update.message.reply_text("Bu ID bo'yicha ma'lumot topilmadi. IDni tekshiring.")
 
 # Asosiy botni ishga tushirish
 if __name__ == "__main__":
@@ -146,13 +164,10 @@ if __name__ == "__main__":
             ASK_SUBJECT: [CallbackQueryHandler(ask_subject)],
             ASK_PAYMENT: [CallbackQueryHandler(ask_payment)],
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[CommandHandler("cancel", lambda u, c: ConversationHandler.END)],
     )
 
-    # Admin qarori uchun handler
-    app.add_handler(CallbackQueryHandler(admin_decision, pattern="^(approve|reject)$"))
-
+    # Test natijasi uchun handler
     app.add_handler(conv_handler)
-
     print("Bot ishga tushdi...")
     app.run_polling()
