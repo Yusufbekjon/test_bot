@@ -6,7 +6,7 @@ const token = '7503846179:AAGi3hpUYZebL-07KK72T--p3EH7vQ_RLwg';
 const bot = new TelegramBot(token, { polling: true });
 
 // Test natijalarini saqlash uchun fayl nomi
-const TEST_RESULTS_FILE = 'test_results.json';
+const TEST_RESULTS_FILE = './test_results.json';
 
 // Test natijalarini yuklash
 function loadTestResults() {
