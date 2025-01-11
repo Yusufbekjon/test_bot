@@ -19,7 +19,11 @@ function loadTestResults() {
 
 // Test natijalarini saqlash
 function saveTestResults(data) {
-    fs.writeFileSync(TEST_RESULTS_FILE, JSON.stringify(data, null, 4));
+    try {
+        fs.writeFileSync(TEST_RESULTS_FILE, JSON.stringify(data, null, 4));
+    } catch (error) {
+        console.error("❌ Faylga yozishda xatolik:", error);
+    }
 }
 
 // Unikal ID yaratish
@@ -37,7 +41,7 @@ bot.onText(/\/start/, (msg) => {
     // Foydalanuvchini tekshirish
     if (testResults[chatId]) {
         const user = testResults[chatId];
-        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\nID: ${user.id}\nIsm: ${user.name}\nYosh: ${user.age}\nTelefon: ${user.phone}\nFan yo'nalishi: ${user.subject}\nTo'lov usuli: ${user.payment_method}\n\n\n Bo't mualifi: @yusuf_1broo `);
+        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\n📋 ID: ${user.id}\n🔤 Ism: ${user.name || "Noma'lum"}\n👤 Yosh: ${user.age || "Noma'lum"}\n📞 Telefon: ${user.phone || "Noma'lum"}\n📚 Fan yo'nalishi: ${user.subject || "Noma'lum"}\n💰 To'lov usuli: ${user.payment_method || "Noma'lum"}\n\nBo't muallifi: @yusuf_1broo`);
     } else {
         // Yangi foydalanuvchi uchun yangi yozuv yaratish
         testResults[chatId] = { id: generateUserId(), state: 'ASK_NAME' };
@@ -45,6 +49,51 @@ bot.onText(/\/start/, (msg) => {
 
         bot.sendMessage(chatId, "🔤 Ism va Familyangizni kiriting:");
     }
+});
+
+// /testnatijasi buyrug'i
+bot.onText(/\/testnatijasi/, (msg) => {
+    const chatId = msg.chat.id;
+    const user = testResults[chatId];
+
+    if (!user) {
+        bot.sendMessage(chatId, "❌ Siz ro'yxatdan o'tmagansiz. Iltimos, avval /start buyrug'ini bosing.");
+        return;
+    }
+
+    if (user.result) {
+        const { correct, incorrect } = user.result;
+        bot.sendMessage(chatId, `📊 Sizning test natijalaringiz:\n✅ To'g'ri javoblar: ${correct}\n❌ Xato javoblar: ${incorrect}`);
+    } else {
+        bot.sendMessage(chatId, "📊 Sizning test natijangiz hali kiritilmagan. Iltimos, adminga murojaat qiling.");
+    }
+});
+
+// Test natijasini admin tomonidan qo'shish
+bot.onText(/\/settest (.+)/, (msg, match) => {
+    const chatId = msg.chat.id;
+
+    const args = match[1].split(" ");
+    if (args.length !== 3) {
+        bot.sendMessage(chatId, "❌ Noto'g'ri format. To'g'ri format:\n/settest <id> <to'g'ri javoblar soni> <xato javoblar soni>");
+        return;
+    }
+
+    const [id, correct, incorrect] = args;
+    const user = Object.values(testResults).find((user) => user.id.toString() === id);
+
+    if (!user) {
+        bot.sendMessage(chatId, `❌ ID ${id} topilmadi.`);
+        return;
+    }
+
+    user.result = {
+        correct: parseInt(correct, 10),
+        incorrect: parseInt(incorrect, 10),
+    };
+    saveTestResults(testResults);
+
+    bot.sendMessage(chatId, `✅ Test natijalari saqlandi:\n📋 ID: ${id}\n✅ To'g'ri javoblar: ${correct}\n❌ Xato javoblar: ${incorrect}`);
 });
 
 // Har bir xabarni qayta ishlash
@@ -132,78 +181,65 @@ function askPhone(msg, userData, chatId) {
     };
 
     bot.sendMessage(chatId, "📚 Quyidagi yo'nalishlardan birini tanlang:", options);
-    bot.once('callback_query', (callbackQuery) => askSubject(callbackQuery, userData, chatId));
 }
 
 // Fan yo'nalishini so'rash
-function askSubject(callbackQuery, userData, chatId) {
-    const subject = callbackQuery.data;
-    userData.subject = subject;
-
-    const paymentOptions = {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: "Offline", callback_data: "offline" }, { text: "Online", callback_data: "online" }]
-            ]
-        }
-    };
-
-    bot.editMessageText("To'lov usulini tanlang:", { chat_id: chatId, message_id: callbackQuery.message.message_id, reply_markup: paymentOptions });
-    bot.once('callback_query', (callbackQuery) => askPayment(callbackQuery, userData, chatId));
-}
-
-// To'lov usulini so'rash
-function askSubject(callbackQuery, userData, chatId) {
-    const subject = callbackQuery.data;
-    userData.subject = subject;
-    userData.state = 'ASK_PAYMENT';
-    saveTestResults(testResults);
-
-    const paymentOptions = {
-        reply_markup: {
-            inline_keyboard: [
-                [
-                    { text: "💵 Offline", callback_data: "offline" },
-                    { text: "💳 Online", callback_data: "online" }
-                ]
-            ]
-        }
-    };
-
-    bot.sendMessage(chatId, "💰 To'lov usulini tanlang:", paymentOptions);
-}
-
-// To'lov usulini qayta ishlash
 bot.on('callback_query', (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
     const userData = testResults[chatId];
 
-    if (!userData || userData.state !== 'ASK_PAYMENT') return;
+    if (userData.state === 'ASK_SUBJECT') {
+        const subject = callbackQuery.data;
+        userData.subject = subject;
+        userData.state = 'ASK_PAYMENT';
+        saveTestResults(testResults);
 
-    const paymentMethod = callbackQuery.data;
-    userData.payment_method = paymentMethod;
-    saveTestResults(testResults);
+        // Tugmalarni o'chirish
+        bot.editMessageReplyMarkup(
+            { inline_keyboard: [] },
+            { chat_id: chatId, message_id: callbackQuery.message.message_id }
+        ).then(() => {
+            bot.sendMessage(chatId, `📚 Siz "${subject}" fan yo'nalishini tanladingiz.`);
 
-    if (paymentMethod === "offline") {
-        bot.sendMessage(
-            chatId,
-            `✅ Hurmatli ${userData.name},\nMa'lumotlaringiz saqlandi. To'lovni offline amalga oshirishingiz mumkin.\n📋 Sizning ID: ${userData.id}`
-        );
-    } else if (paymentMethod === "online") {
-        bot.sendMessage(
-            chatId,
-            `✅ Hurmatli ${userData.name},\n💳 To'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n💳 Karta: 9860 1201 1404 7869\n👨‍🏫 Ega: @Ozodbekmath_teacher\n\n📋 Sizning ID: ${userData.id}\nTo'lovni amalga oshirgach, adminga murojaat qiling!`
-        );
-    }
+            // To'lov usulini tanlash uchun tugmalar
+            const paymentOptions = {
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: "💵 Offline", callback_data: "offline" },
+                            { text: "💳 Online", callback_data: "online" }
+                        ]
+                    ]
+                }
+            };
 
-    // "Test natijasini ko'rish" tugmasi
-    const vercelUrl = `https://test-bot-livid.vercel.app/?user_id=${userData.id}`;
-    const options = {
-        reply_markup: {
-            inline_keyboard: [[{ text: "📊 Test natijasini ko'rish", url: vercelUrl }]]
+            bot.sendMessage(chatId, "💰 To'lov usulini tanlang:", paymentOptions);
+        });
+    } else if (userData.state === 'ASK_PAYMENT') {
+        const paymentMethod = callbackQuery.data;
+        userData.payment_method = paymentMethod;
+        saveTestResults(testResults);
+
+        if (paymentMethod === "offline") {
+            bot.sendMessage(
+                chatId,
+                `✅ Hurmatli ${userData.name},\nMa'lumotlaringiz saqlandi. To'lovni offline amalga oshirishingiz mumkin.\n📋 Sizning ID: ${userData.id}`
+            );
+        } else if (paymentMethod === "online") {
+            bot.sendMessage(
+                chatId,
+                `✅ Hurmatli ${userData.name},\n💳 To'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n💳 Karta: 9860 1201 1404 7869\n👨‍🏫 Ega: @Ozodbekmath_teacher\n\n📋 Sizning ID: ${userData.id}\nTo'lovni amalga oshirgach, adminga murojaat qiling!`
+            );
         }
-    };
 
-    bot.sendMessage(chatId, "📊 Test natijangizni quyidagi tugma orqali ko'rishingiz mumkin:", options);
+        // "Test natijasini ko'rish" tugmasi
+        const vercelUrl = `https://test-bot-livid.vercel.app/?user_id=${userData.id}`;
+        const options = {
+            reply_markup: {
+                inline_keyboard: [[{ text: "📊 Test natijasini ko'rish", url: vercelUrl }]]
+            }
+        };
+
+        bot.sendMessage(chatId, "📊 Test natijangizni quyidagi tugma orqali ko'rishingiz mumkin:", options);
+    }
 });
-
