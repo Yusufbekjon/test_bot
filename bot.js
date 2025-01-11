@@ -37,7 +37,7 @@ bot.onText(/\/start/, (msg) => {
     // Foydalanuvchini tekshirish
     if (testResults[chatId]) {
         const user = testResults[chatId];
-        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\nID: ${user.id}\nIsm: ${user.name}\nYosh: ${user.age}\nTelefon: ${user.phone}\nFan yo'nalishi: ${user.subject}\nTo'lov usuli: ${user.payment_method}`);
+        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\nID: ${user.id}\nIsm: ${user.name}\nYosh: ${user.age}\nTelefon: ${user.phone}\nFan yo'nalishi: ${user.subject}\nTo'lov usuli: ${user.payment_method}\n\n\n Bo't mualifi: @yusuf_1broo `);
     } else {
         // Yangi foydalanuvchi uchun yangi yozuv yaratish
         testResults[chatId] = { id: generateUserId(), state: 'ASK_NAME' };
