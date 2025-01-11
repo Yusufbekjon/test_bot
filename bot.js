@@ -48,7 +48,7 @@ bot.onText(/\/start/, (msg) => {
                     [
                         {
                             text: "Bo't muallifi",
-                            url: "https://t.me/admin_profile"  // Adminning Telegram username'ini qo'yishingiz kerak
+                            url: "https://t.me/yusuf_1broo"  // Adminning Telegram username'ini qo'yishingiz kerak
                         }
                     ]
                 ]
@@ -240,8 +240,18 @@ bot.on('callback_query', (callbackQuery) => {
         } else if (paymentMethod === "online") {
             bot.sendMessage(
                 chatId,
-                `✅ Hurmatli ${userData.name},\n💳 To'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n💳 Karta: 9860 1201 1404 7869\n👨‍🏫 Ega: @Ozodbekmath_teacher\n\n📋 Sizning ID: ${userData.id}\nTo'lovni amalga oshirgach, adminga murojaat qiling!\n\n\n Bo't mualifi ${ADMIN}`
-            );
+                `✅ Hurmatli ${userData.name},\n💳 To'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n💳 Karta: 9860 1201 1404 7869\n👨‍🏫 Ega: @Ozodbekmath_teacher\n\n📋 Sizning ID: ${userData.id}\nTo'lovni amalga oshirgach, adminga murojaat qiling!\n\n\n `,{
+                    reply_markup: {
+                        inline_keyboard: [
+                            [
+                                {
+                                    text: "Bo't muallifi",
+                                    url: "https://t.me/yusuf_1broo"  // Adminning Telegram username'ini qo'yishingiz kerak
+                                }
+                            ]
+                        ]
+                    }
+                });
         }
 
         // "Test natijasini ko'rish" tugmasi
