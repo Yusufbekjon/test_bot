@@ -7,7 +7,7 @@ const bot = new TelegramBot(token, { polling: true });
 
 // Test natijalarini saqlash uchun fayl nomi
 const TEST_RESULTS_FILE = 'test_results.json';
-const ADMIN = '@yusuf_1bro';
+const ADMIN = '@yusuf_1broo';
 
 // Test natijalarini yuklash
 function loadTestResults() {
@@ -42,7 +42,18 @@ bot.onText(/\/start/, (msg) => {
     // Foydalanuvchini tekshirish
     if (testResults[chatId]) {
         const user = testResults[chatId];
-        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\n📋 ID: ${user.id}\n🔤 Ism: ${user.name || "Noma'lum"}\n👤 Yosh: ${user.age || "Noma'lum"}\n📞 Telefon: ${user.phone || "Noma'lum"}\n📚 Fan yo'nalishi: ${user.subject || "Noma'lum"}\n💰 To'lov usuli: ${user.payment_method || "Noma'lum"}\n\nBo't muallifi: ${ADMIN}`);
+        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\n📋 ID: ${user.id}\n🔤 Ism: ${user.name || "Noma'lum"}\n👤 Yosh: ${user.age || "Noma'lum"}\n📞 Telefon: ${user.phone || "Noma'lum"}\n📚 Fan yo'nalishi: ${user.subject || "Noma'lum"}\n💰 To'lov usuli: ${user.payment_method || "Noma'lum"}`,{
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: "Bo't muallifi",
+                            url: "https://t.me/admin_profile"  // Adminning Telegram username'ini qo'yishingiz kerak
+                        }
+                    ]
+                ]
+            }
+        });
     } else {
         // Yangi foydalanuvchi uchun yangi yozuv yaratish
         testResults[chatId] = { id: generateUserId(), state: 'ASK_NAME' };
