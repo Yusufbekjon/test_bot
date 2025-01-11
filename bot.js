@@ -5,13 +5,6 @@ const fs = require('fs');
 const token = '7503846179:AAGi3hpUYZebL-07KK72T--p3EH7vQ_RLwg';
 const bot = new TelegramBot(token, { polling: true });
 
-// Bosqichlar uchun o'zgaruvchilar
-const ASK_NAME = 'ASK_NAME';
-const ASK_AGE = 'ASK_AGE';
-const ASK_PHONE = 'ASK_PHONE';
-const ASK_SUBJECT = 'ASK_SUBJECT';
-const ASK_PAYMENT = 'ASK_PAYMENT';
-
 // Test natijalarini saqlash uchun fayl nomi
 const TEST_RESULTS_FILE = 'test_results.json';
 
@@ -29,35 +22,54 @@ function saveTestResults(data) {
     fs.writeFileSync(TEST_RESULTS_FILE, JSON.stringify(data, null, 4));
 }
 
-// Foydalanuvchiga unikal raqamli ID berish
+// Unikal ID yaratish
 function generateUserId() {
-    return Math.floor(Math.random() * 900000) + 100000;  // 6 raqamli tasodifiy ID yaratadi
+    return Math.floor(Math.random() * 900000) + 100000; // 6 raqamli tasodifiy ID
 }
 
-// Ma'lumotlarni saqlash uchun test natijalari
+// Ma'lumotlarni saqlash
 let testResults = loadTestResults();
 
 // /start buyrug'i
-bot.onText(/\/start/, async (msg) => {
+bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
 
-    const userData = {};
-
-    // Agar foydalanuvchi avval ro'yxatdan o'tgansiz bo'lsa
+    // Foydalanuvchini tekshirish
     if (testResults[chatId]) {
         const user = testResults[chatId];
         bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\nID: ${user.id}\nIsm: ${user.name}\nYosh: ${user.age}\nTelefon: ${user.phone}\nFan yo'nalishi: ${user.subject}\nTo'lov usuli: ${user.payment_method}`);
     } else {
-        // Yangi foydalanuvchi uchun ID yaratish
-        userData.id = generateUserId();
-        testResults[chatId] = userData;
+        // Yangi foydalanuvchi uchun yangi yozuv yaratish
+        testResults[chatId] = { id: generateUserId(), state: 'ASK_NAME' };
+        saveTestResults(testResults);
 
         bot.sendMessage(chatId, "Ism va Familyangizni kiriting:");
-        // Bosqichga o'tish uchun o'zgartirish kerak bo'ladi
-        bot.once('message', (msg) => askName(msg, userData, chatId));
     }
 });
 
+// Har bir xabarni qayta ishlash
+bot.on('message', (msg) => {
+    const chatId = msg.chat.id;
+
+    // Foydalanuvchi mavjudligini tekshirish
+    if (!testResults[chatId]) return;
+
+    const userData = testResults[chatId];
+
+    switch (userData.state) {
+        case 'ASK_NAME':
+            askName(msg, userData, chatId);
+            break;
+        case 'ASK_AGE':
+            askAge(msg, userData, chatId);
+            break;
+        case 'ASK_PHONE':
+            askPhone(msg, userData, chatId);
+            break;
+    }
+});
+
+// Ismni so'rash
 function askName(msg, userData, chatId) {
     const name = msg.text;
     if (!/^[a-zA-Z ]+$/.test(name)) {
@@ -66,28 +78,40 @@ function askName(msg, userData, chatId) {
     }
 
     userData.name = name;
+    userData.state = 'ASK_AGE';
+    saveTestResults(testResults);
 
     bot.sendMessage(chatId, "Yoshingizni kiriting:");
-    bot.once('message', (msg) => askAge(msg, userData, chatId));
 }
 
+// Yoshni so'rash
 function askAge(msg, userData, chatId) {
-    userData.age = msg.text;
-    bot.sendMessage(chatId, "Telefon raqamingizni yuboring:");
-    bot.once('message', (msg) => askPhone(msg, userData, chatId));
+    const age = parseInt(msg.text, 10);
+    if (isNaN(age) || age <= 0 || age > 120) {
+        bot.sendMessage(chatId, "Iltimos, haqiqiy yosh kiriting.");
+        return;
+    }
+
+    userData.age = age;
+    userData.state = 'ASK_PHONE';
+    saveTestResults(testResults);
+
+    bot.sendMessage(chatId, "Telefon raqamingizni kiriting:");
 }
 
+// Telefon raqamini so'rash
 function askPhone(msg, userData, chatId) {
     const phoneNumber = msg.text;
     if (!/^\d{9,}$/.test(phoneNumber)) {
-        bot.sendMessage(chatId, "Iltimos, haqiqiy telefon raqamini kiriting:");
-        // qaytib telefon raqami kiritilishini kutamiz
+        bot.sendMessage(chatId, "Iltimos, haqiqiy telefon raqamini kiriting.");
         return;
     }
 
     userData.phone = phoneNumber;
+    userData.state = 'ASK_SUBJECT';
+    saveTestResults(testResults);
 
-    // Fan yo'nalishlarini tanlash
+    // Keyingi bosqich (fan yo'nalishlari)
     const subjects = [
         ["Matematika Fizika", "Matematika Ingliz tili"],
         ["Matematika Ona tili", "Kimyo Biologiya"],
@@ -111,7 +135,7 @@ function askPhone(msg, userData, chatId) {
     bot.once('callback_query', (callbackQuery) => askSubject(callbackQuery, userData, chatId));
 }
 
-
+// Fan yo'nalishini so'rash
 function askSubject(callbackQuery, userData, chatId) {
     const subject = callbackQuery.data;
     userData.subject = subject;
@@ -128,6 +152,7 @@ function askSubject(callbackQuery, userData, chatId) {
     bot.once('callback_query', (callbackQuery) => askPayment(callbackQuery, userData, chatId));
 }
 
+// To'lov usulini so'rash
 function askPayment(callbackQuery, userData, chatId) {
     const paymentMethod = callbackQuery.data;
     userData.payment_method = paymentMethod;
