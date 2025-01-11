@@ -7,6 +7,7 @@ const bot = new TelegramBot(token, { polling: true });
 
 // Test natijalarini saqlash uchun fayl nomi
 const TEST_RESULTS_FILE = 'test_results.json';
+const ADMIN = '@yusuf_1bro';
 
 // Test natijalarini yuklash
 function loadTestResults() {
@@ -41,7 +42,7 @@ bot.onText(/\/start/, (msg) => {
     // Foydalanuvchini tekshirish
     if (testResults[chatId]) {
         const user = testResults[chatId];
-        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\n📋 ID: ${user.id}\n🔤 Ism: ${user.name || "Noma'lum"}\n👤 Yosh: ${user.age || "Noma'lum"}\n📞 Telefon: ${user.phone || "Noma'lum"}\n📚 Fan yo'nalishi: ${user.subject || "Noma'lum"}\n💰 To'lov usuli: ${user.payment_method || "Noma'lum"}\n\nBo't muallifi: @yusuf_1broo`);
+        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\n📋 ID: ${user.id}\n🔤 Ism: ${user.name || "Noma'lum"}\n👤 Yosh: ${user.age || "Noma'lum"}\n📞 Telefon: ${user.phone || "Noma'lum"}\n📚 Fan yo'nalishi: ${user.subject || "Noma'lum"}\n💰 To'lov usuli: ${user.payment_method || "Noma'lum"}\n\nBo't muallifi: ${ADMIN}`);
     } else {
         // Yangi foydalanuvchi uchun yangi yozuv yaratish
         testResults[chatId] = { id: generateUserId(), state: 'ASK_NAME' };
@@ -228,7 +229,7 @@ bot.on('callback_query', (callbackQuery) => {
         } else if (paymentMethod === "online") {
             bot.sendMessage(
                 chatId,
-                `✅ Hurmatli ${userData.name},\n💳 To'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n💳 Karta: 9860 1201 1404 7869\n👨‍🏫 Ega: @Ozodbekmath_teacher\n\n📋 Sizning ID: ${userData.id}\nTo'lovni amalga oshirgach, adminga murojaat qiling!`
+                `✅ Hurmatli ${userData.name},\n💳 To'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n💳 Karta: 9860 1201 1404 7869\n👨‍🏫 Ega: @Ozodbekmath_teacher\n\n📋 Sizning ID: ${userData.id}\nTo'lovni amalga oshirgach, adminga murojaat qiling!\n\n\n Bo't mualifi ${ADMIN}`
             );
         }
 
