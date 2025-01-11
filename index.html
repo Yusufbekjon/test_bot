@@ -15,26 +15,6 @@
     .container {
       margin-top: 50px;
     }
-    input {
-      padding: 10px;
-      width: 80%;
-      max-width: 300px;
-      border: 2px solid #ddd;
-      border-radius: 5px;
-      margin-top: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      margin-top: 10px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
     #result {
       margin-top: 20px;
       font-size: 16px;
@@ -45,25 +25,23 @@
 <body>
   <div class="container">
     <h1>Test Natijasi</h1>
-    <p>ID ni kiriting:</p>
-    <input type="text" id="user-id" placeholder="Foydalanuvchi ID" />
-    <button onclick="getTestResult()">Natijani ko'rish</button>
-    <div id="result"></div>
+    <div id="result">Natijalar yuklanmoqda...</div>
   </div>
 
   <script>
     async function getTestResult() {
-      const userId = document.getElementById('user-id').value.trim();
+      const urlParams = new URLSearchParams(window.location.search);
+      const userId = urlParams.get('user_id');
       const resultDiv = document.getElementById('result');
 
       if (!userId) {
-        resultDiv.innerHTML = "Iltimos, ID ni kiriting.";
+        resultDiv.innerHTML = "Foydalanuvchi ID topilmadi.";
         return;
       }
 
       try {
-        // API chaqiruvi (ma'lumotlar backend'dan olinadi)
-        const response = await fetch(`https://your-backend-url.com/api/results/${userId}`);
+        // Backend'ga foydalanuvchi ID bilan so'rov yuborish
+        const response = await fetch("https://test-bot-livid.vercel.app/api/results/" + userId);
         if (response.ok) {
           const data = await response.json();
           resultDiv.innerHTML = `
@@ -72,12 +50,14 @@
             Xato javoblar: ${data.wrong}
           `;
         } else {
-          resultDiv.innerHTML = "ID bo'yicha ma'lumot topilmadi.";
+          resultDiv.innerHTML = "Natijalar topilmadi.";
         }
       } catch (error) {
         resultDiv.innerHTML = "Xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.";
       }
     }
+
+    getTestResult();
   </script>
 </body>
 </html>

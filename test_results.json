@@ -1,38 +1,3 @@
 {
-    "862180": {
-        "name": "hdjshjsna",
-        "age": "32",
-        "phone": "998888314808",
-        "subject": "Ingliz tili Ona tili",
-        "payment_method": "online",
-        "correct": 0,
-        "wrong": 0
-    },
-    "236165": {
-        "name": "dnxnbsnss",
-        "age": "45",
-        "phone": "998888314808",
-        "subject": "Xuquq Ingliz tili",
-        "payment_method": "online",
-        "correct": 0,
-        "wrong": 0
-    },
-    "376967": {
-        "name": "cnnnx",
-        "age": "45",
-        "phone": "998888314808",
-        "subject": "Matematika Geografiya",
-        "payment_method": "online",
-        "correct": 0,
-        "wrong": 0
-    },
-    "930579": {
-        "name": "bdhshsbsbbs",
-        "age": "15",
-        "phone": "998888314808",
-        "subject": "IELTS (mock)",
-        "payment_method": "offline",
-        "correct": 0,
-        "wrong": 0
-    }
+    
 }
