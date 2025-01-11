@@ -192,7 +192,7 @@ bot.on('callback_query', (callbackQuery) => {
         if (paymentMethod === "offline") {
             bot.sendMessage(chatId, `✅ Hurmatli ${userData.name}, ma'lumotlaringiz saqlandi. Offline to'lovni amalga oshiring.`);
         } else if (paymentMethod === "online") {
-            bot.sendMessage(chatId, `✅ Hurmatli ${userData.name}, online to'lov uchun quyidagi karta: 9860 1201 1404 7869.`);
+            bot.sendMessage(chatId, `✅ Hurmatli ${userData.name},\n To'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n 💳 Karta: 9860 1201 1404 7869\n 👨‍🏫Ega: @Ozodbekmath_teacher\n 📋 Sizning ID: ${userData.id}`);
         }
 
         const vercelUrl = `https://test-bot-livid.vercel.app/?user_id=${userData.id}`;
