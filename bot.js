@@ -6,7 +6,7 @@ const token = '7503846179:AAGi3hpUYZebL-07KK72T--p3EH7vQ_RLwg'; // Bu yerga o'z 
 const bot = new TelegramBot(token, { polling: true });
 
 // Adminning chat ID'sini kiriting
-const ADMIN_CHAT_ID = '5025075321'; // Admin chat ID'sini o'rnating
+const ADMIN_CHAT_ID = '5424737524'; // Admin chat ID'sini o'rnating
 
 // Test natijalarini saqlash uchun fayl nomi
 const TEST_RESULTS_FILE = 'test_results.json';
