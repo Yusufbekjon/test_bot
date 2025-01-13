@@ -117,7 +117,7 @@ function askAge(msg, userData, chatId) {
 // Telefon raqamini so'rash
 function askPhone(msg, userData, chatId) {
     const phoneNumber = msg.text;
-    if (!/^\d{9,}$/.test(phoneNumber)) {
+    if (!/^\+?\d{9,15}$/.test(phoneNumber)) {
         bot.sendMessage(chatId, "❌ Iltimos, haqiqiy telefon raqamini kiriting.");
         return;
     }
@@ -163,7 +163,7 @@ bot.on('callback_query', (callbackQuery) => {
             { inline_keyboard: [] },
             { chat_id: chatId, message_id: callbackQuery.message.message_id }
         ).then(() => {
-            bot.sendMessage(chatId, `📚 Siz "${subject}" fan yo'nalishini tanladingiz.`);
+            
 
             const paymentOptions = {
                 reply_markup: {
