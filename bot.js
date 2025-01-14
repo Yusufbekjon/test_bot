@@ -2,287 +2,179 @@ const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 
 // Bot tokenini kiriting
-const token = '7503846179:AAGi3hpUYZebL-07KK72T--p3EH7vQ_RLwg'; // Bu yerga o'z bot tokeningizni yozing
+const token = '7963584828:AAGt1rhNXafuzjMcuUUmQcBw86AFu3tV6d4';
 const bot = new TelegramBot(token, { polling: true });
 
 // Adminning chat ID'sini kiriting
-const ADMIN_CHAT_ID = '5025075321'; // Admin chat ID'sini o'rnating
+const ADMIN_CHAT_ID = '5025075321';
 
-// Test natijalarini saqlash uchun fayl nomi
+// Fayl nomlari
 const TEST_RESULTS_FILE = 'test_results.json';
 const TESTS_FILE = 'tests.json';
 
-// Test natijalarini yuklash
-function loadTestResults() {
+// Fayllarni yuklash funksiyalari
+function loadFromFile(filename) {
     try {
-        return JSON.parse(fs.readFileSync(TEST_RESULTS_FILE, 'utf-8'));
+        return JSON.parse(fs.readFileSync(filename, 'utf-8'));
     } catch (e) {
         return {};
     }
 }
 
-function loadTests() {
+function saveToFile(filename, data) {
     try {
-        return JSON.parse(fs.readFileSync(TESTS_FILE, 'utf-8'));
-    } catch (e) {
-        return {};
-    }
-}
-
-// Test natijalarini saqlash
-function saveTestResults(data) {
-    try {
-        fs.writeFileSync(TEST_RESULTS_FILE, JSON.stringify(data, null, 4));
+        fs.writeFileSync(filename, JSON.stringify(data, null, 4));
     } catch (error) {
-        console.error("❌ Faylga yozishda xatolik:", error);
+        console.error(`❌ Faylga yozishda xatolik (${filename}):`, error);
     }
 }
 
-function saveTests(data) {
-    try {
-        fs.writeFileSync(TESTS_FILE, JSON.stringify(data, null, 4));
-    } catch (error) {
-        console.error("❌ Testlarni saqlashda xatolik:", error);
-    }
-}
+// Ma'lumotlarni yuklash
+let testResults = loadFromFile(TEST_RESULTS_FILE);
+let tests = loadFromFile(TESTS_FILE);
 
-// Unikal ID yaratish
+// Foydalanuvchilar uchun unikal ID yaratish
 function generateUserId() {
-    return Math.floor(Math.random() * 900000) + 100000; // 6 raqamli tasodifiy ID
+    return Math.floor(Math.random() * 900000) + 100000;
 }
 
-// Ma'lumotlarni saqlash
-let testResults = loadTestResults();
-let tests = loadTests();
-
-// /start buyrug'i
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
 
     // Foydalanuvchini tekshirish
     if (testResults[chatId]) {
         const user = testResults[chatId];
-        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\n📋 ID: ${user.id}\n🔤 Ism: ${user.name || "Noma'lum"}\n👤 Yosh: ${user.age || "Noma'lum"}\n📞 Telefon: ${user.phone || "Noma'lum"}\n📚 Fan yo'nalishi: ${user.subject || "Noma'lum"}\n💰 To'lov usuli: ${user.payment_method || "Noma'lum"}`, {
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        { text: "Bot admin", url: "https://t.me/yusuf_1broo" }
-                    ]
-                ]
-            }
-        });
+        bot.sendMessage(chatId, `📋 Siz ro'yxatdan o'tgansiz:\n\n🔤 Ism: ${user.name || "Noma'lum"}\n👤 Yosh: ${user.age || "Noma'lum"}\n📞 Telefon: ${user.phone || "Noma'lum"}\n📚 Yo'nalish: ${user.subject || "Noma'lum"}`);
     } else {
-        // Yangi foydalanuvchi uchun yangi yozuv yaratish
         testResults[chatId] = { id: generateUserId(), state: 'ASK_NAME' };
-        saveTestResults(testResults);
+        saveToFile(TEST_RESULTS_FILE, testResults);
 
-        bot.sendMessage(chatId, "🔤 Ism va Familyangizni kiriting:");
+        bot.sendMessage(chatId, "🔤 Iltimos, ismingizni kiriting:");
     }
 });
-
-// Boshidan boshlash tugmasini qayta ishlash
-bot.on('callback_query', (callbackQuery) => {
-    const chatId = callbackQuery.message.chat.id;
-
-    if (callbackQuery.data === 'restart') {
-        testResults[chatId] = { id: generateUserId(), state: 'ASK_NAME' };
-        saveTestResults(testResults);
-
-        bot.sendMessage(chatId, "🔤 Ism va Familyangizni kiriting:");
-    }
-});
-
-// Har bir xabarni qayta ishlash
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
-
-    // Foydalanuvchi mavjudligini tekshirish
-    if (!testResults[chatId]) return;
-
     const userData = testResults[chatId];
+
+    if (!userData || !userData.state) return;
 
     switch (userData.state) {
         case 'ASK_NAME':
-            askName(msg, userData, chatId);
+            userData.name = msg.text;
+            userData.state = 'ASK_AGE';
+            bot.sendMessage(chatId, "👤 Yoshingizni kiriting:");
             break;
+
         case 'ASK_AGE':
-            askAge(msg, userData, chatId);
-            break;
-        case 'ASK_PHONE':
-            askPhone(msg, userData, chatId);
-            break;
-    }
-});
-
-// Ismni so'rash
-function askName(msg, userData, chatId) {
-    const name = msg.text;
-    if (!/^[a-zA-Z ]+$/.test(name)) {
-        bot.sendMessage(chatId, "❌ Iltimos, faqat harflardan foydalaning.");
-        return;
-    }
-
-    userData.name = name;
-    userData.state = 'ASK_AGE';
-    saveTestResults(testResults);
-
-    bot.sendMessage(chatId, "👤 Yoshingizni kiriting:");
-}
-
-// Yoshni so'rash
-function askAge(msg, userData, chatId) {
-    const age = parseInt(msg.text, 10);
-    if (isNaN(age) || age <= 0 || age > 50) {
-        bot.sendMessage(chatId, "❌ Iltimos, haqiqiy yosh kiriting.");
-        return;
-    }
-
-    userData.age = age;
-    userData.state = 'ASK_PHONE';
-    saveTestResults(testResults);
-
-    bot.sendMessage(chatId, "📞 Telefon raqamingizni kiriting:");
-}
-
-// Telefon raqamini so'rash
-function askPhone(msg, userData, chatId) {
-    const phoneNumber = msg.text;
-    if (!/^\+?\d{9,15}$/.test(phoneNumber)) {
-        bot.sendMessage(chatId, "❌ Iltimos, haqiqiy telefon raqamini kiriting.");
-        return;
-    }
-
-    userData.phone = phoneNumber;
-    userData.state = 'ASK_SUBJECT';
-    saveTestResults(testResults);
-
-    const subjects = [
-        ["📚 Matematika Fizika", "📘 Matematika Ingliz tili"],
-        ["📖 Matematika Ona tili", "🧪 Kimyo Biologiya"],
-        ["🌍 Ingliz tili Ona tili", "⚖️ Xuquq Ingliz tili"],
-        ["🏔️ Tarix Geografiya", "📊 Matematika Geografiya"],
-        ["📒 Ona tili Biologiya", "📜 Tarix Ona tili"],
-        ["🏫 PM maktablari", "🏛️ Al Xorazmiy maktab"],
-        ["📈 Multilevel (Mock)", "🎯 IELTS (mock)"],
-    ];
-
-    const options = {
-        reply_markup: {
-            inline_keyboard: subjects.map(row => row.map(subject => ({
-                text: subject,
-                callback_data: subject
-            })))
-        }
-    };
-
-    bot.sendMessage(chatId, "📚 Quyidagi yo'nalishlardan birini tanlang:", options);
-}
-
-// Fan yo'nalishini va to'lov usulini so'rash
-bot.on('callback_query', (callbackQuery) => {
-    const chatId = callbackQuery.message.chat.id;
-    const userData = testResults[chatId];
-
-    if (userData.state === 'ASK_SUBJECT') {
-        const subject = callbackQuery.data;
-        userData.subject = subject;
-        userData.state = 'ASK_PAYMENT';
-        saveTestResults(testResults);
-
-        bot.editMessageReplyMarkup(
-            { inline_keyboard: [] },
-            { chat_id: chatId, message_id: callbackQuery.message.message_id }
-        ).then(() => {
-
-            const paymentOptions = {
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: "💵 Offline", callback_data: "offline" },
-                            { text: "💳 Online", callback_data: "online" }
-                        ]
-                    ]
-                }
-            };
-
-            bot.sendMessage(chatId, "💰 To'lov usulini tanlang:", paymentOptions);
-        });
-    } else if (userData.state === 'ASK_PAYMENT') {
-        const paymentMethod = callbackQuery.data;
-        userData.payment_method = paymentMethod;
-        saveTestResults(testResults);
-
-        // Foydalanuvchi ma'lumotlarini adminga yuborish
-        bot.sendMessage(
-            ADMIN_CHAT_ID,
-            `📋 Yangi foydalanuvchi:\n\n🔤 Ism: ${userData.name}\n👤 Yosh: ${userData.age}\n📞 Telefon: ${userData.phone}\n📚 Fan yo'nalishi: ${userData.subject}\n💰 To'lov usuli: ${paymentMethod}`
-        );
-
-        if (paymentMethod === "offline") {
-            bot.sendMessage(chatId, `✅ Hurmatli ${userData.name}, ma'lumotlaringiz saqlandi. Offline to'lovni amalga oshiring.`);
-        } else if (paymentMethod === "online") {
-            bot.sendMessage(chatId, `✅ Hurmatli ${userData.name},\n To'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n 💳 Karta: 9860 1201 1404 7869\n 👨‍🏫Ega: @Ozodbekmath_teacher\n 📋 Sizning ID: ${userData.id}`);
-        }
-
-        const vercelUrl = `https://test-bot-livid.vercel.app/?user_id=${userData.id}`;
-        const options = {
-            reply_markup: {
-                inline_keyboard: [[{ text: "📊 Test natijasini ko'rish", url: vercelUrl }]]
-            }
-        };
-
-        bot.sendMessage(chatId, "📊 Test natijangizni quyidagi tugma orqali ko'rishingiz mumkin:", options);
-    }
-});
-
-// Yangi tugmalarni qo'shish
-bot.onText(/\/menu/, (msg) => {
-    const chatId = msg.chat.id;
-
-    const options = {
-        reply_markup: {
-            keyboard: [
-                [{ text: "📋 Natijani Tekshirish" }, { text: "📑 Test Kiritish" }],
-            ],
-            resize_keyboard: true,
-            one_time_keyboard: true,
-        },
-    };
-
-    bot.sendMessage(chatId, "Kerakli amalni tanlang:", options);
-});
-
-bot.on('message', (msg) => {
-    const chatId = msg.chat.id;
-    const text = msg.text;
-
-    if (text === "📋 Natijani Tekshirish") {
-        bot.sendMessage(chatId, "ID ni kiriting, test natijasini bilib beraman:");
-        bot.once('message', (msg) => {
-            const userId = msg.text;
-            const result = testResults[userId];
-
-            if (result) {
-                bot.sendMessage(chatId, `Natija:\n📚 Fan: ${result.subject}\n✅ Javoblar: ${result.answers || "Hali yo'q"}`);
+            const age = parseInt(msg.text, 10);
+            if (isNaN(age) || age <= 0 || age > 100) {
+                bot.sendMessage(chatId, "❌ Iltimos, to'g'ri yosh kiriting.");
             } else {
-                bot.sendMessage(chatId, "❌ Bunday ID mavjud emas yoki natija topilmadi.");
+                userData.age = age;
+                userData.state = 'ASK_PHONE';
+                bot.sendMessage(chatId, "📞 Telefon raqamingizni kiriting:");
+            }
+            break;
+
+        case 'ASK_PHONE':
+            userData.phone = msg.text;
+            userData.state = 'ASK_SUBJECT';
+            const subjects = [
+                ["📚 Matematika Fizika", "📘 Matematika Ingliz tili"],
+                ["📖 Matematika Ona tili", "🧪 Kimyo Biologiya"],
+                ["🌍 Ingliz tili Ona tili", "⚖️ Xuquq Ingliz tili"],
+                ["🏔️ Tarix Geografiya", "📊 Matematika Geografiya"],
+                ["📒 Ona tili Biologiya", "📜 Tarix Ona tili"],
+                ["🏫 PM maktablari", "🏛️ Al Xorazmiy maktab"],
+                ["📈 Multilevel (Mock)", "🎯 IELTS (mock)"],
+            ];
+            bot.sendMessage(chatId, "📚 Yo'nalishni tanlang:", {
+                reply_markup: {
+                    keyboard: subjects,
+                    resize_keyboard: true
+                }
+            });
+            break;
+
+        case 'ASK_SUBJECT':
+            userData.subject = msg.text;
+            userData.state = null;
+            bot.sendMessage(chatId, `✅ Ma'lumotlaringiz saqlandi!`);
+            saveToFile(TEST_RESULTS_FILE, testResults);
+            break;
+    }
+});
+
+const paymentOptions = {
+    reply_markup: {
+        inline_keyboard: [
+            [
+                { text: "💵 Offline", callback_data: "offline" },
+                { text: "💳 Online", callback_data: "online" }
+            ]
+        ]
+    }
+};
+
+bot.on('callback_query', (query) => {
+    const userId = query.from.id; // Foydalanuvchi ID
+    if (query.data === 'online') {
+        bot.sendMessage(userId, `✅ Hurmatli ${query.from.first_name},\nTo'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n💳 Karta: 9860 1201 1404 7869\n👨‍🏫 Ega: @Ozodbekmath_teacher\n📋 Sizning ID: ${userId}`);
+    } else if (query.data === 'offline') {
+        bot.sendMessage(userId, `Siz ofline to'lov qilishingiz mumkin.`, {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "Bot Admini", callback_data: "admin_profile" }]
+                ]
             }
         });
-    } else if (text === "📑 Test Kiritish") {
-        if (chatId !== ADMIN_CHAT_ID) {
-            bot.sendMessage(chatId, "❌ Sizda bu amalni bajarish huquqi yo'q.");
+    } else if (query.data === 'admin_profile') {
+        // Adminni profiliga o'tish
+        bot.sendMessage(userId, `Bot adminiga o'tish: @admin_nick`, { parse_mode: 'Markdown' });
+    }
+});
+
+
+bot.onText(/\/addresult/, (msg) => {
+    if (msg.chat.id != ADMIN_CHAT_ID) {
+        bot.sendMessage(msg.chat.id, "❌ Sizda bu amalni bajarish huquqi yo'q.");
+        return;
+    }
+
+    bot.sendMessage(msg.chat.id, "Foydalanuvchi ID va javoblarni kiriting (masalan, 658945: 1-a, 2-b, 3-c).");
+    bot.once('message', (msg) => {
+        const [id, result] = msg.text.split(':');
+        if (!testResults[id]) {
+            bot.sendMessage(msg.chat.id, "❌ ID topilmadi.");
             return;
         }
 
-        bot.sendMessage(chatId, "Fan va javoblarni kiriting (masalan, Matematika*abcdbaa...):");
-        bot.once('message', (msg) => {
-            const [subject, answers] = msg.text.split('*');
-            const testId = generateUserId();
+        testResults[id].result = result.trim();
+        saveToFile(TEST_RESULTS_FILE, testResults);
+        bot.sendMessage(msg.chat.id, `✅ Natija saqlandi!`);
+    });
+});
+bot.onText(/\/myresult/, (msg) => {
+    bot.sendMessage(msg.chat.id, "ID raqamingizni kiriting:");
+    bot.once('message', (msg) => {
+        const id = msg.text;
+        if (!testResults[id] || !testResults[id].result) {
+            bot.sendMessage(msg.chat.id, "❌ Natija topilmadi.");
+            return;
+        }
 
-            tests[testId] = { subject, answers };
-            saveTests(tests);
-
-            bot.sendMessage(chatId, `✅ Test saqlandi. Test ID: ${testId}`);
-        });
-    }
+        const result = testResults[id].result;
+        bot.sendMessage(msg.chat.id, `✅ Sizning natijangiz:\n\n${result}`);
+    });
+});
+bot.onText(/\/menu/, (msg) => {
+    bot.sendMessage(msg.chat.id, "Quyidagilarni tanlang:", {
+        reply_markup: {
+            keyboard: [
+                ["📋 Natijani Tekshirish"], ["📑 Test Kiritish"],
+                ["🔙 Bosh menyu"]
+            ],
+            resize_keyboard: true
+        }
+    });
 });
