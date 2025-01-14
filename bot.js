@@ -52,6 +52,7 @@ bot.onText(/\/start/, (msg) => {
         bot.sendMessage(chatId, "🔤 Iltimos, ismingizni kiriting:");
     }
 });
+
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
     const userData = testResults[chatId];
@@ -105,6 +106,7 @@ bot.on('message', (msg) => {
     }
 });
 
+// Payment options
 const paymentOptions = {
     reply_markup: {
         inline_keyboard: [
@@ -134,7 +136,7 @@ bot.on('callback_query', (query) => {
     }
 });
 
-
+// Admin funksiyalari
 bot.onText(/\/addresult/, (msg) => {
     if (msg.chat.id != ADMIN_CHAT_ID) {
         bot.sendMessage(msg.chat.id, "❌ Sizda bu amalni bajarish huquqi yo'q.");
@@ -154,6 +156,8 @@ bot.onText(/\/addresult/, (msg) => {
         bot.sendMessage(msg.chat.id, `✅ Natija saqlandi!`);
     });
 });
+
+// Test natijalarini tekshirish
 bot.onText(/\/myresult/, (msg) => {
     bot.sendMessage(msg.chat.id, "ID raqamingizni kiriting:");
     bot.once('message', (msg) => {
@@ -167,6 +171,8 @@ bot.onText(/\/myresult/, (msg) => {
         bot.sendMessage(msg.chat.id, `✅ Sizning natijangiz:\n\n${result}`);
     });
 });
+
+// Menu va tugmalar
 bot.onText(/\/menu/, (msg) => {
     bot.sendMessage(msg.chat.id, "Quyidagilarni tanlang:", {
         reply_markup: {
