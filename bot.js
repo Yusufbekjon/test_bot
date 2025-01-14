@@ -1,5 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
+const express = require('express');
+const app = express();
 
 // Bot tokenini kiriting
 const token = '7503846179:AAGi3hpUYZebL-07KK72T--p3EH7vQ_RLwg'; // Bot tokeningizni kiriting
@@ -75,6 +77,10 @@ bot.on('message', (msg) => {
                 ["📚 Matematika Fizika", "📘 Matematika Ingliz tili"],
                 ["📖 Matematika Ona tili", "🧪 Kimyo Biologiya"],
                 ["🌍 Ingliz tili Ona tili", "⚖️ Xuquq Ingliz tili"],
+                ["🏔️ Tarix Geografiya", "📊 Matematika Geografiya"],
+                ["📒 Ona tili Biologiya", "📜 Tarix Ona tili"],
+                ["🏫 PM maktablari", "🏛️ Al Xorazmiy maktab"],
+                ["📈 Multilevel (Mock)", "🎯 IELTS (mock)"],
             ];
             bot.sendMessage(chatId, "📚 Yo'nalishni tanlang:", {
                 reply_markup: {
@@ -137,4 +143,27 @@ bot.onText(/\/save_result (.+)/, (msg, match) => {
     saveTestResults(testResults);
 
     bot.sendMessage(chatId, `✅ Test natijalari saqlandi: ID: ${userId}, To'g'ri: ${correct}, Xato: ${wrong}`);
+});
+
+// Express serverini ishga tushurish
+app.use(express.static('public'));
+
+// API endpoint
+app.get('/api/result', (req, res) => {
+    const userId = req.query.user_id;  // URL'dan 'user_id' parametrini olish
+    if (userId) {
+        const user = Object.values(testResults).find(u => u.id.toString() === userId);
+        if (user && user.testResult) {
+            res.json({ success: true, correct: user.testResult.correct, wrong: user.testResult.wrong });
+        } else {
+            res.json({ success: false });
+        }
+    } else {
+        res.json({ success: false });
+    }
+});
+
+// Serverni ishga tushurish
+app.listen(3000, () => {
+    console.log("Server 3000 portda ishga tushdi...");
 });
