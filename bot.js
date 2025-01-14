@@ -80,6 +80,18 @@ bot.onText(/\/start/, (msg) => {
     }
 });
 
+// Boshidan boshlash tugmasini qayta ishlash
+bot.on('callback_query', (callbackQuery) => {
+    const chatId = callbackQuery.message.chat.id;
+
+    if (callbackQuery.data === 'restart') {
+        testResults[chatId] = { id: generateUserId(), state: 'ASK_NAME' };
+        saveTestResults(testResults);
+
+        bot.sendMessage(chatId, "🔤 Ism va Familyangizni kiriting:");
+    }
+});
+
 // Har bir xabarni qayta ishlash
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
