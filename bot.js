@@ -170,6 +170,18 @@ app.get('/api/result', (req, res) => {
     }
 });
 
+// HTML sahifadagi forma so'rovini qo'llab-quvvatlash
+app.get('/submit', (req, res) => {
+    const userId = req.query.userId;
+    const user = Object.values(testResults).find(u => u.id.toString() === userId);
+
+    if (user && user.testResult) {
+        res.send(`To'g'ri: ${user.testResult.correct}, Xato: ${user.testResult.wrong}`);
+    } else {
+        res.send("Foydalanuvchi topilmadi yoki test natijasi mavjud emas.");
+    }
+});
+
 // Serverni ishga tushurish
 app.listen(3000, () => {
     console.log("Server 3000 portda ishga tushdi...");

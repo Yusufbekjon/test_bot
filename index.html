@@ -118,22 +118,6 @@
         </div>
         <p id="result"></p>
     </div>
-    <script>
-       document.getElementById('result-form').addEventListener('submit', function (event) {
-            event.preventDefault();
-            const userId = document.getElementById('userId').value;
-            fetch(`/api/result?user_id=${userId}`)
-                .then(response => response.json())
-                .then(data => {
-                    const resultDiv = document.getElementById('result');
-                    if (data.success) {
-                        resultDiv.innerHTML = `To'g'ri: ${data.correct}, Xato: ${data.wrong}`;
-                    } else {
-                        resultDiv.innerHTML = "Foydalanuvchi topilmadi yoki test natijasi mavjud emas.";
-                    }
-                });
-        });
-    </script>
-    </script>
+    <script src="bot.js"></script>
 </body>
 </html>
