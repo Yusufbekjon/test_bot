@@ -127,16 +127,16 @@ bot.on('callback_query', (callbackQuery) => {
             bot.sendMessage(chatId, `✅ Hurmatli ${userData.name},\nTo'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n💳 Karta: 9860 1201 1404 7869\n👨‍🏫 Ega: @Ozodbekmath_teacher\n📋 Sizning ID: ${userData.id}`, {
                 reply_markup: {
                     inline_keyboard: [
-                        [{ text: "Admin bilan bog'lanish", url: `tg://user?id=${ADMIN_CHAT_ID}` }]
+                        [{ text: "Admin bilan bog'lanish", url: `https://t.me/yusuf_1broo` }]
                     ]
                 }
             });
         } else {
             // Offline to'lov
-            bot.sendMessage(chatId, `Hurmatli ${userData.name}, Siz ofline to'lov turini tanladingiz. Ma'lumotlaringiz saqlandi.`, {
+            bot.sendMessage(chatId, `Hurmatli ${userData.name}, Siz ofline to'lov turini tanladingiz. Ma'lumotlaringiz saqlandi.\n📋 Sizning ID: ${userData.id}`, {
                 reply_markup: {
                     inline_keyboard: [
-                        [{ text: "Admin bilan bog'lanish", url: `tg://user?id=${ADMIN_CHAT_ID}` }]
+                        [{ text: "Admin", url: `https://t.me/yusuf_1broo` }]
                     ]
                 }
             });
