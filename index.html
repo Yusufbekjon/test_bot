@@ -105,10 +105,10 @@
     <div class="container">
         <h1>TEST CHECKING</h1>
         <div class="input-box">
-            <input type="text" id="userId" placeholder="ID raqamini kiriting" required>
+            <input type="text" id="userId" name="userId" placeholder="ID raqamini kiriting" required>
             <i class="fa-solid fa-id-card"></i>
         </div>
-        <button onclick="checkResult()" class="btn">
+        <button type="submit"  class="btn">
             <i class="fa-solid fa-magnifying-glass"></i>
             Tekshirish
         </button>
@@ -119,14 +119,9 @@
         <p id="result"></p>
     </div>
     <script>
-         function getResult() {
-            const userId = document.getElementById('user_id').value;
-            if (!userId) {
-                alert("ID kiriting!");
-                return;
-            }
-
-            // Serverga fetch so'rovi yuborish
+       document.getElementById('result-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const userId = document.getElementById('userId').value;
             fetch(`/api/result?user_id=${userId}`)
                 .then(response => response.json())
                 .then(data => {
@@ -136,12 +131,8 @@
                     } else {
                         resultDiv.innerHTML = "Foydalanuvchi topilmadi yoki test natijasi mavjud emas.";
                     }
-                })
-                .catch(error => {
-                    console.error('Xato:', error);
-                    alert('Xatolik yuz berdi.');
                 });
-        }
+        });
     </script>
     </script>
 </body>

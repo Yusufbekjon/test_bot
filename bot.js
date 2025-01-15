@@ -1,10 +1,12 @@
+// Telegram bot va server
 const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const express = require('express');
+const path = require('path');
 const app = express();
 
 // Bot tokenini kiriting
-const token = '7503846179:AAGi3hpUYZebL-07KK72T--p3EH7vQ_RLwg'; // Bot tokeningizni kiriting
+const token = '7503846179:AAG7vCQ7vCwYZebL-07KK72T--p3EH7vQ_RLwg'; // Bot tokeningizni kiriting
 const bot = new TelegramBot(token, { polling: true });
 
 // Adminning chat ID'sini kiriting
@@ -47,7 +49,12 @@ bot.onText(/\/start/, (msg) => {
         const user = testResults[chatId];
         bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\n📋 ID: ${user.id}\n🔤 Ism: ${user.name || "Noma'lum"}\n👤 Yosh: ${user.age || "Noma'lum"}\n📚 Yo'nalish: ${user.subject || "Noma'lum"}\n💰 To'lov turi: ${user.payment_method || "Noma'lum"}`);
     } else {
-        testResults[chatId] = { id: generateUserId(), state: 'ASK_NAME' };
+        let userId;
+        do {
+            userId = generateUserId(); // Takrorlanmas ID yaratish
+        } while (Object.values(testResults).some(user => user.id === userId)); // Foydalanuvchilar orasida mavjudligini tekshirish
+
+        testResults[chatId] = { id: userId, state: 'ASK_NAME' };
         saveTestResults(testResults);
         bot.sendMessage(chatId, "🔤 Ism va Familyangizni kiriting:");
     }
