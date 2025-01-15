@@ -6,7 +6,7 @@ const path = require('path');
 const app = express();
 
 // Bot tokenini kiriting
-const token = '7503846179:AAG7vCQ7vCwYZebL-07KK72T--p3EH7vQ_RLwg'; // Bot tokeningizni kiriting
+const token = '7503846179:AAGi3hpUYZebL-07KK72T--p3EH7vQ_RLwg'; // Bot tokeningizni kiriting
 const bot = new TelegramBot(token, { polling: true });
 
 // Adminning chat ID'sini kiriting
