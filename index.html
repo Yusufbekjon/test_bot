@@ -6,38 +6,37 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <title>Test Natijasi</title>
     <style>
-    *{
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: 'poppins', sans-serif;
-    }
-    body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        background: url(img.jpg) no-repeat;
-        background-size: cover;
-        background-position: center;
-    }
-    .container {
-        width: 320px;
-        height: 380px;
-        background: transparent;
-        border: 2px solid rgba(255, 255, 255, .2);
-        backdrop-filter: blur(20px);
-        box-shadow: 0 0 10px rgba(0, 0, 0, .2);
-        color: #fff;
-        border-radius: 10px;
-        padding: 30px 40px;
-        overflow: hidden;
-    }
-    
-    
-    .container h1{
-        font-size: 36px;
-        text-align: center;
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'poppins', sans-serif;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: url(img.jpg) no-repeat;
+            background-size: cover;
+            background-position: center;
+        }
+        .container {
+            width: 320px;
+            height: 380px;
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, .2);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 10px rgba(0, 0, 0, .2);
+            color: #fff;
+            border-radius: 10px;
+            padding: 30px 40px;
+            overflow: hidden;
+        }
+
+        .container h1{
+            font-size: 36px;
+            text-align: center;
         }
         .container .input-box {
             position: relative;
@@ -67,39 +66,36 @@
             transform: translateY(-50%);
             font-size: 20px;
         }
-    .btn {
-        width: 100%;
-        height: 45px;
-        border: none;
-        outline: none;
-        border-radius: 40px;
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: 600;
-        background-color: #fff;
-        background-image: linear-gradient(315deg, #fff 0%, #fff 74%);
-        border: none;
-        z-index: 1;
-    }
-    
-  
-    .container .register-link {
-        font-size: 14.5px;
-        text-align: center;
-        margin-top: 20px;
-    }
-    .register-link p a {
-        color: #fff;
-        text-decoration: none;
-        font-weight: 600;
-    }
+        .btn {
+            width: 100%;
+            height: 45px;
+            border: none;
+            outline: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            background-color: #fff;
+            background-image: linear-gradient(315deg, #fff 0%, #fff 74%);
+            border: none;
+            z-index: 1;
+        }
 
-    .register-link p a:hover{
-        text-decoration: underline;
+        .container .register-link {
+            font-size: 14.5px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .register-link p a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+        }
 
-    }
+        .register-link p a:hover{
+            text-decoration: underline;
+        }
     </style>
-    
 </head>
 <body>
     <div class="container">
@@ -113,11 +109,36 @@
             Tekshirish
         </button>
         <div class="register-link">
-            <p>Create by:<a 
-                href="https://t.me/yusuf_1broo">YUSUF</a></p>
+            <p>Create by:<a href="https://t.me/yusuf_1broo">YUSUF</a></p>
         </div>
         <p id="result"></p>
     </div>
-    <script src="bot.js"></script>
+
+    <script>
+    document.querySelector('.btn').addEventListener('click', function() {
+        const userId = document.querySelector('#userId').value;  // Input qiymatini oling
+
+        if (!userId) {
+            alert("ID raqamini kiriting!");
+            return;
+        }
+
+        // Fetch so'rovi yuborish
+        fetch(`/api/result?user_id=${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                const resultElement = document.getElementById('result');
+                
+                if (data.success) {
+                    resultElement.textContent = `To'g'ri: ${data.correct}, Xato: ${data.wrong}`;
+                } else {
+                    resultElement.textContent = "Foydalanuvchi topilmadi yoki test natijasi mavjud emas.";
+                }
+            })
+            .catch(error => {
+                console.error("Xatolik yuz berdi:", error);
+            });
+    });
+    </script>
 </body>
 </html>

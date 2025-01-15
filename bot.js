@@ -1,8 +1,6 @@
-// Telegram bot va server
 const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const express = require('express');
-const path = require('path');
 const app = express();
 
 // Bot tokenini kiriting
@@ -10,7 +8,7 @@ const token = '7503846179:AAGi3hpUYZebL-07KK72T--p3EH7vQ_RLwg'; // Bot tokeningi
 const bot = new TelegramBot(token, { polling: true });
 
 // Adminning chat ID'sini kiriting
-const ADMIN_CHAT_ID = '5025075321'; // Admin chat ID'sini kiriting
+const ADMIN_CHAT_ID = '5424737524'; // Admin chat ID'sini kiriting
 
 // Test natijalarini saqlash uchun fayl nomi
 const TEST_RESULTS_FILE = 'test_results.json';
@@ -38,16 +36,15 @@ function generateUserId() {
     return Math.floor(Math.random() * 900000) + 100000; // 6 raqamli tasodifiy ID
 }
 
-// Ma'lumotlarni saqlash
 let testResults = loadTestResults();
 
-// /start buyrug'i
+// Foydalanuvchi bilan muloqot bosqichlari
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
 
     if (testResults[chatId]) {
         const user = testResults[chatId];
-        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\n📋 ID: ${user.id}\n🔤 Ism: ${user.name || "Noma'lum"}\n👤 Yosh: ${user.age || "Noma'lum"}\n📚 Yo'nalish: ${user.subject || "Noma'lum"}\n💰 To'lov turi: ${user.payment_method || "Noma'lum"}`);
+        bot.sendMessage(chatId, `Siz ro'yxatdan o'tgansiz.\n\n📋 ID: ${user.id}\n🔤 Ism: ${user.name || "Noma'lum"}\n👤 Yosh: ${user.age || "Noma'lum"}\n📱 Telefon: ${user.phone || "Noma'lum"}\n📚 Yo'nalish: ${user.subject || "Noma'lum"}\n💳 To'lov turi: ${user.payment_method || "Noma'lum"}\n🛒 Karta egasi: ${user.card_owner || "Noma'lum"}`);
     } else {
         let userId;
         do {
@@ -60,7 +57,7 @@ bot.onText(/\/start/, (msg) => {
     }
 });
 
-// Xabarlarni qayta ishlash
+// Foydalanuvchi xabarlarini qayta ishlash
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
 
@@ -77,9 +74,14 @@ bot.on('message', (msg) => {
             break;
         case 'ASK_AGE':
             userData.age = parseInt(msg.text, 10);
+            userData.state = 'ASK_PHONE';
+            saveTestResults(testResults);
+            bot.sendMessage(chatId, "📱 Telefon raqamingizni kiriting:");
+            break;
+        case 'ASK_PHONE':
+            userData.phone = msg.text;
             userData.state = 'ASK_SUBJECT';
             saveTestResults(testResults);
-
             const subjects = [
                 ["📚 Matematika Fizika", "📘 Matematika Ingliz tili"],
                 ["📖 Matematika Ona tili", "🧪 Kimyo Biologiya"],
@@ -98,7 +100,7 @@ bot.on('message', (msg) => {
     }
 });
 
-// Callback querylar
+// Callback querylarni qayta ishlash
 bot.on('callback_query', (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
     const userData = testResults[chatId];
@@ -108,7 +110,7 @@ bot.on('callback_query', (callbackQuery) => {
         userData.state = 'ASK_PAYMENT';
         saveTestResults(testResults);
 
-        bot.sendMessage(chatId, "💰 To'lov usulini tanlang:", {
+        bot.sendMessage(chatId, "💳 To'lov usulini tanlang:", {
             reply_markup: {
                 inline_keyboard: [
                     [{ text: "💵 Offline", callback_data: "offline" }, { text: "💳 Online", callback_data: "online" }]
@@ -117,9 +119,32 @@ bot.on('callback_query', (callbackQuery) => {
         });
     } else if (userData.state === 'ASK_PAYMENT') {
         userData.payment_method = callbackQuery.data;
+        userData.state = 'ASK_CARD_OWNER';
         saveTestResults(testResults);
 
-        bot.sendMessage(ADMIN_CHAT_ID, `📋 Yangi foydalanuvchi:\n\n🔤 Ism: ${userData.name}\n👤 Yosh: ${userData.age}\n📚 Yo'nalish: ${userData.subject}\n💰 To'lov turi: ${userData.payment_method}\n📋 ID: ${userData.id}`);
+        if (callbackQuery.data === 'online') {
+            // Online to'lov
+            bot.sendMessage(chatId, `✅ Hurmatli ${userData.name},\nTo'lovni amalga oshirish uchun quyidagi ma'lumotlardan foydalaning:\n\n💳 Karta: 9860 1201 1404 7869\n👨‍🏫 Ega: @Ozodbekmath_teacher\n📋 Sizning ID: ${userData.id}`, {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: "Admin bilan bog'lanish", url: `tg://user?id=${ADMIN_CHAT_ID}` }]
+                    ]
+                }
+            });
+        } else {
+            // Offline to'lov
+            bot.sendMessage(chatId, `Hurmatli ${userData.name}, Siz ofline to'lov turini tanladingiz. Ma'lumotlaringiz saqlandi.`, {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: "Admin bilan bog'lanish", url: `tg://user?id=${ADMIN_CHAT_ID}` }]
+                    ]
+                }
+            });
+        }
+    } else if (userData.state === 'ASK_CARD_OWNER') {
+        userData.card_owner = callbackQuery.data;
+        saveTestResults(testResults);
+        bot.sendMessage(ADMIN_CHAT_ID, `📋 Yangi foydalanuvchi:\n\n🔤 Ism: ${userData.name}\n👤 Yosh: ${userData.age}\n📱 Telefon: ${userData.phone}\n📚 Yo'nalish: ${userData.subject}\n💳 To'lov turi: ${userData.payment_method}\n🛒 Karta egasi: ${userData.card_owner}\n📋 ID: ${userData.id}`);
         bot.sendMessage(chatId, `✅ Ro'yxatdan o'tish yakunlandi! ID: ${userData.id}`);
     }
 });
@@ -136,7 +161,7 @@ bot.onText(/\/save_result (.+)/, (msg, match) => {
     const [userId, correct, wrong] = match[1].split(' ');
 
     if (!userId || isNaN(correct) || isNaN(wrong)) {
-        bot.sendMessage(chatId, "❌ To'g'ri format: `/save_result <user_id> <correct> <wrong>`");
+        bot.sendMessage(chatId, "❌ To'g'ri format: /save_result <user_id> <correct> <wrong>");
         return;
     }
 
@@ -152,12 +177,25 @@ bot.onText(/\/save_result (.+)/, (msg, match) => {
     bot.sendMessage(chatId, `✅ Test natijalari saqlandi: ID: ${userId}, To'g'ri: ${correct}, Xato: ${wrong}`);
 });
 
+// Foydalanuvchining test natijasini olish
+bot.onText(/\/get_result (\d+)/, (msg, match) => {
+    const chatId = msg.chat.id;
+    const userId = match[1];
+
+    const user = Object.values(testResults).find(u => u.id.toString() === userId);
+    if (user && user.testResult) {
+        bot.sendMessage(chatId, `ID: ${userId} - To'g'ri: ${user.testResult.correct}, Xato: ${user.testResult.wrong}`);
+    } else {
+        bot.sendMessage(chatId, "❌ Foydalanuvchi yoki test natijasi mavjud emas.");
+    }
+});
+
 // Express serverini ishga tushurish
 app.use(express.static('public'));
 
 // API endpoint
 app.get('/api/result', (req, res) => {
-    const userId = req.query.user_id;  // URL'dan 'user_id' parametrini olish
+    const userId = req.query.user_id;
     if (userId) {
         const user = Object.values(testResults).find(u => u.id.toString() === userId);
         if (user && user.testResult) {
@@ -167,18 +205,6 @@ app.get('/api/result', (req, res) => {
         }
     } else {
         res.json({ success: false });
-    }
-});
-
-// HTML sahifadagi forma so'rovini qo'llab-quvvatlash
-app.get('/submit', (req, res) => {
-    const userId = req.query.userId;
-    const user = Object.values(testResults).find(u => u.id.toString() === userId);
-
-    if (user && user.testResult) {
-        res.send(`To'g'ri: ${user.testResult.correct}, Xato: ${user.testResult.wrong}`);
-    } else {
-        res.send("Foydalanuvchi topilmadi yoki test natijasi mavjud emas.");
     }
 });
 
